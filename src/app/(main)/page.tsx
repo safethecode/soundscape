@@ -1,10 +1,9 @@
+import AudioSpectrum from '@/components/AudioSpectrum'
+
 export default function Main() {
   return (
-    <main>
-      <code>
-        This page is an example page. Please delete the page and happy hacking!
-        🎉
-      </code>
+    <main className="flex min-h-screen items-center justify-center">
+      <AudioSpectrum />
     </main>
   )
 }
