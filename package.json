@@ -1,0 +1,54 @@
+{
+  "name": "dnff.frontend",
+  "description": "🦄 Experience rapid development with tailwindcss.",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .next",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:fix": "eslint --fix --ext .js,.jsx,.ts,.tsx ."
+  },
+  "dependencies": {
+    "@radix-ui/react-icons": "^1.3.0",
+    "@vanilla-extract/css": "^1.15.3",
+    "class-variance-authority": "^0.7.0",
+    "lucide-react": "^0.453.0",
+    "next": "^14.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.7",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@vanilla-extract/next-plugin": "^2.4.2",
+    "autoprefixer": "^10.4.19",
+    "clsx": "^2.1.1",
+    "eslint": "8.45.0",
+    "eslint-config-next": "13.4.12",
+    "eslint-plugin-tailwindcss": "^3.17.5",
+    "lint-staged": "^13.3.0",
+    "postcss": "^8.4.38",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.2"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
