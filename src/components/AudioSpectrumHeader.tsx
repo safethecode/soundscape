@@ -1,5 +1,7 @@
 "use client"
 
+import { Menu } from "lucide-react";
+
 interface AudioSpectrumHeaderProps {
   visualType: "line" | "bar";
   onVisualTypeChange: (type: "line" | "bar") => void;
@@ -10,24 +12,27 @@ export default function AudioSpectrumHeader({
   onVisualTypeChange,
 }: AudioSpectrumHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b border-[#2C2C2E] bg-[#1C1C1E] p-4">
-      <h2 className="text-lg font-semibold text-white">Soundscape</h2>
+    <div className="flex items-center justify-between border-b border-[#2C2C2E] bg-[#1C1C1E] px-4 py-2">
+      <div className="flex items-center gap-2">
+        <Menu className="w-4 h-4 text-white cursor-pointer" />
+        <h2 className="text-lg font-semibold text-white">SoundScape</h2>
+      </div>
       <div className="flex gap-2">
         <button
           onClick={() => onVisualTypeChange("line")}
-          className={`rounded-md px-4 py-2 transition-colors ${visualType === "line"
-            ? "bg-blue-500 text-white"
-            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-          }`}
+          className={`rounded px-2 transition-colors ${visualType === "line"
+            ? "bg-neutral-500 text-white"
+            : "bg-neutral-700 text-gray-400 hover:bg-neutral-600"
+            }`}
         >
           Line
         </button>
         <button
           onClick={() => onVisualTypeChange("bar")}
-          className={`rounded-md px-4 py-2 transition-colors ${visualType === "bar"
-            ? "bg-blue-500 text-white"
-            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-          }`}
+          className={`rounded px-2 transition-colors ${visualType === "bar"
+            ? "bg-neutral-500 text-white"
+            : "bg-neutral-700 text-gray-400 hover:bg-neutral-600"
+            }`}
         >
           Bar
         </button>
