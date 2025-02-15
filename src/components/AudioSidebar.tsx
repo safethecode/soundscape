@@ -99,49 +99,49 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
   }
 
   const handlePinkNoiseToggle = () => {
-    if (!audioContext) return;
+    if (!audioContext) return
 
     if (!isPinkNoiseEnabled) {
-      const noise = createPinkNoise(audioContext);
-      const gain = audioContext.createGain();
-      gain.gain.value = pinkNoiseVolume;
+      const noise = createPinkNoise(audioContext)
+      const gain = audioContext.createGain()
+      gain.gain.value = pinkNoiseVolume
 
-      noise.connect(gain);
-      gain.connect(audioContext.destination);
+      noise.connect(gain)
+      gain.connect(audioContext.destination)
 
-      setPinkNoiseNode(noise);
-      setGainNode(gain);
+      setPinkNoiseNode(noise)
+      setGainNode(gain)
     } else {
       if (pinkNoiseNode) {
-        pinkNoiseNode.disconnect();
-        setPinkNoiseNode(null);
+        pinkNoiseNode.disconnect()
+        setPinkNoiseNode(null)
       }
       if (gainNode) {
-        gainNode.disconnect();
-        setGainNode(null);
+        gainNode.disconnect()
+        setGainNode(null)
       }
     }
 
-    setIsPinkNoiseEnabled(!isPinkNoiseEnabled);
-  };
+    setIsPinkNoiseEnabled(!isPinkNoiseEnabled)
+  }
 
   const handleVolumeChange = (value: number) => {
-    setPinkNoiseVolume(value);
+    setPinkNoiseVolume(value)
     if (gainNode) {
-      gainNode.gain.value = value;
+      gainNode.gain.value = value
     }
-  };
+  }
 
   useEffect(() => {
     return () => {
       if (pinkNoiseNode) {
-        pinkNoiseNode.disconnect();
+        pinkNoiseNode.disconnect()
       }
       if (gainNode) {
-        gainNode.disconnect();
+        gainNode.disconnect()
       }
-    };
-  }, []);
+    }
+  }, [])
 
   return (
     <div className="flex h-screen w-72 flex-col border-l border-[#2C2C2E] bg-[#1C1C1E]">
@@ -241,7 +241,7 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
             className={`rounded-full px-4 py-1.5 text-sm transition-colors ${isPinkNoiseEnabled
               ? "bg-purple-500 text-white"
               : "bg-[#2C2C2E] text-gray-400"
-              }`}
+            }`}
           >
             {isPinkNoiseEnabled ? "On" : "Off"}
           </button>
