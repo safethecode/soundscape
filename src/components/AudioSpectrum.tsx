@@ -167,59 +167,60 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
     ctx.fillStyle = 'rgb(0, 0, 0)'
     ctx.fillRect(0, 0, width, height)
 
-    // Draw grid and labels
+    // Draw grid and labels first
     drawGrid(ctx)
 
-    const barWidth = (width / fftData.length) * 2.5
+    // 그래프를 그리드 내부에 맞추기 위한 여백 설정
+    const marginLeft = 40  // dB 레이블을 위한 왼쪽 여백
+    const marginBottom = 20  // 주파수 레이블을 위한 아래쪽 여백
+    const graphWidth = width - marginLeft
+    const graphHeight = height - marginBottom
+
+    const barWidth = (graphWidth / fftData.length) * 2.5
 
     if (visualType === 'bar') {
-      // 바 그래프 그리기
       for (let i = 0; i < fftData.length; i++) {
         const dbValue = Math.max(Math.min(fftData[i], 40), -140)
         const normalizedHeight = (dbValue + 140) / 180
-        const barHeight = normalizedHeight * height
-        const x = i * (barWidth + 1)
+        const barHeight = normalizedHeight * graphHeight
+        const x = marginLeft + i * (barWidth + 1)
 
-        // 그라데이션 생성
-        const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight)
+        const gradient = ctx.createLinearGradient(0, height - marginBottom, 0, height - marginBottom - barHeight)
         gradient.addColorStop(0, 'rgba(0, 191, 255, 0.8)')
         gradient.addColorStop(1, 'rgba(0, 255, 255, 0.4)')
 
         ctx.fillStyle = gradient
-        ctx.fillRect(x, height - barHeight, barWidth, barHeight)
+        ctx.fillRect(x, height - marginBottom - barHeight, barWidth, barHeight)
 
-        // 바의 상단에 하이라이트 효과
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
-        ctx.fillRect(x, height - barHeight, barWidth, 2)
+        ctx.fillRect(x, height - marginBottom - barHeight, barWidth, 2)
       }
     } else {
-      // 라인 그래프 그리기
       ctx.beginPath()
-      ctx.moveTo(0, height)
-      let prevHeight = height
+      ctx.moveTo(marginLeft, height - marginBottom)
+      let prevHeight = 0
 
       for (let i = 0; i < fftData.length; i++) {
         const dbValue = Math.max(Math.min(fftData[i], 40), -140)
         const normalizedHeight = (dbValue + 140) / 180
-        const barHeight = normalizedHeight * height
-        const x = i * (barWidth + 1)
+        const barHeight = normalizedHeight * graphHeight
+        const x = marginLeft + i * (barWidth + 1)
 
         if (i === 0) {
-          ctx.lineTo(x, height - barHeight)
+          ctx.lineTo(x, height - marginBottom - barHeight)
         } else {
           ctx.bezierCurveTo(
-            x - (barWidth + 1) * 0.5, height - prevHeight,
-            x - (barWidth + 1) * 0.5, height - barHeight,
-            x, height - barHeight
+            x - (barWidth + 1) * 0.5, height - marginBottom - prevHeight,
+            x - (barWidth + 1) * 0.5, height - marginBottom - barHeight,
+            x, height - marginBottom - barHeight
           )
         }
         prevHeight = barHeight
       }
 
-      ctx.lineTo(width, height)
+      ctx.lineTo(width, height - marginBottom)
 
-      // 그라데이션 생성
-      const gradient = ctx.createLinearGradient(0, 0, 0, height)
+      const gradient = ctx.createLinearGradient(0, 0, 0, graphHeight)
       gradient.addColorStop(0, 'rgba(0, 255, 255, 0.5)')
       gradient.addColorStop(1, 'rgba(0, 191, 255, 0.2)')
 
