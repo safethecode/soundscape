@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { createPinkNoise } from "@/lib/noise"
 
 type LPFFrequency = 0.25 | 0.5 | 1;
 type FFTSize = 1024 | 2048 | 4096;
@@ -19,6 +20,10 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("")
   const [volume, setVolume] = useState<number>(-Infinity)
+  const [isPinkNoiseEnabled, setIsPinkNoiseEnabled] = useState(false)
+  const [pinkNoiseVolume, setPinkNoiseVolume] = useState(0.5)
+  const [pinkNoiseNode, setPinkNoiseNode] = useState<ScriptProcessorNode | null>(null)
+  const [gainNode, setGainNode] = useState<GainNode | null>(null)
 
   useEffect(() => {
     const initializeAudio = async () => {
@@ -93,6 +98,51 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
     }
   }
 
+  const handlePinkNoiseToggle = () => {
+    if (!audioContext) return;
+
+    if (!isPinkNoiseEnabled) {
+      const noise = createPinkNoise(audioContext);
+      const gain = audioContext.createGain();
+      gain.gain.value = pinkNoiseVolume;
+
+      noise.connect(gain);
+      gain.connect(audioContext.destination);
+
+      setPinkNoiseNode(noise);
+      setGainNode(gain);
+    } else {
+      if (pinkNoiseNode) {
+        pinkNoiseNode.disconnect();
+        setPinkNoiseNode(null);
+      }
+      if (gainNode) {
+        gainNode.disconnect();
+        setGainNode(null);
+      }
+    }
+
+    setIsPinkNoiseEnabled(!isPinkNoiseEnabled);
+  };
+
+  const handleVolumeChange = (value: number) => {
+    setPinkNoiseVolume(value);
+    if (gainNode) {
+      gainNode.gain.value = value;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pinkNoiseNode) {
+        pinkNoiseNode.disconnect();
+      }
+      if (gainNode) {
+        gainNode.disconnect();
+      }
+    };
+  }, []);
+
   return (
     <div className="flex h-screen w-72 flex-col border-l border-[#2C2C2E] bg-[#1C1C1E]">
       <div className="border-b border-gray-800 p-4">
@@ -141,7 +191,7 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
       </div>
       <div className="flex-1 space-y-4 p-4">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-white">Analysis</span>
+          <span className="font-medium text-white">Extended</span>
         </div>
         <div className="space-y-4">
           <div className='flex items-center justify-between'>
@@ -181,6 +231,38 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
               <option value="FIFO">FIFO</option>
             </select>
           </div>
+        </div>
+      </div>
+      <div className="border-t border-gray-800 p-4">
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-white">Pink Noise</span>
+          <button
+            onClick={handlePinkNoiseToggle}
+            className={`rounded-full px-4 py-1.5 text-sm transition-colors ${isPinkNoiseEnabled
+              ? "bg-purple-500 text-white"
+              : "bg-[#2C2C2E] text-gray-400"
+              }`}
+          >
+            {isPinkNoiseEnabled ? "On" : "Off"}
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-400">Volume</span>
+            <span className="text-sm text-gray-400">
+              {Math.round(pinkNoiseVolume * 100)}%
+            </span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={pinkNoiseVolume}
+            onChange={(e) => handleVolumeChange(Number(e.target.value))}
+            className="w-full accent-purple-500"
+          />
         </div>
       </div>
     </div>
