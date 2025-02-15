@@ -11,7 +11,7 @@ export default function AudioSpectrumHeader({
 }: AudioSpectrumHeaderProps) {
   return (
     <div className="flex items-center justify-between bg-[#1C1C1E] p-4 border-b border-[#2C2C2E]">
-      <h2 className="text-lg font-semibold text-white">Audio Spectrum</h2>
+      <h2 className="text-lg font-semibold text-white">Soundscape</h2>
       <div className="flex gap-2">
         <button
           onClick={() => onVisualTypeChange('line')}
