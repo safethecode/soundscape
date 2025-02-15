@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import * as d3 from "d3"
 import ComplexArray from "@/lib/complex_array"
 import { FFT } from "@/lib/fft"
 import { LowPassFilter, FIFOFilter } from "@/lib/filters"
@@ -29,13 +30,31 @@ interface Point {
   clientY: number;
 }
 
-export default function AudioSpectrum({ width = 800, height = 400, audioContext, source, onSourceChange, lpfFrequency, fftSize, onLpfFrequencyChange, averageType, visualType, onVisualTypeChange }: AudioSpectrumProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+export default function AudioSpectrum({
+  width = window.innerWidth - 288, // 기본값을 window 너비로 변경
+  height = window.innerHeight - 48, // 헤더 높이(48px)를 제외한 window 높이
+  audioContext,
+  source,
+  onSourceChange,
+  lpfFrequency,
+  fftSize,
+  onLpfFrequencyChange,
+  averageType,
+  visualType,
+  onVisualTypeChange
+}: AudioSpectrumProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
   const audioContextRef = useRef<AudioContext>()
   const sourceRef = useRef<MediaStreamAudioSourceNode>()
   const scriptProcessorRef = useRef<ScriptProcessorNode>()
   const lpfFiltersRef = useRef<LowPassFilter[]>([])
   const fifoFiltersRef = useRef<FIFOFilter[]>([])
+  const lineGraphRef = useRef<SVGSVGElement>(null)
+  const barGraphRef = useRef<SVGSVGElement>(null)
+
+  const margin = { top: 30, right: 40, bottom: 40, left: 60 }
+  const graphWidth = width - margin.left - margin.right
+  const graphHeight = height - margin.top - margin.bottom
 
   const [fifoCount, setFifoCount] = useState<number>(4)
   const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null)
@@ -159,108 +178,158 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
   }, [fifoCount])
 
   const drawSpectrum = (fftData: Float32Array) => {
-    if (!canvasRef.current) return
-    const ctx = canvasRef.current.getContext("2d")
-    if (!ctx) return
+    // 두 그래프 모두 그리기
+    [lineGraphRef, barGraphRef].forEach((ref, index) => {
+      if (!ref.current) return
 
-    // Clear canvas
-    ctx.fillStyle = "rgb(0, 0, 0)"
-    ctx.fillRect(0, 0, width, height)
+      const svg = d3.select(ref.current)
+      svg.selectAll("*").remove()
 
-    // Draw grid and labels first
-    drawGrid(ctx)
+      const g = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`)
 
-    // 그래프를 그리드 내부에 맞추기 위한 여백 설정
-    const marginLeft = 40  // dB 레이블을 위한 왼쪽 여백
-    const marginBottom = 20  // 주파수 레이블을 위한 아래쪽 여백
-    const graphWidth = width - marginLeft
-    const graphHeight = height - marginBottom
+      // 배경 그리드
+      g.append("rect")
+        .attr("width", graphWidth)
+        .attr("height", graphHeight)
+        .attr("fill", "rgba(0, 0, 0, 0.3)")
+        .attr("rx", 8) // 모서리 둥글게
 
-    const barWidth = (graphWidth / fftData.length) * 2.5
+      // X축 스케일 (주파수)
+      const xScale = d3.scaleLog()
+        .domain([20, 20000])
+        .range([0, graphWidth])
 
-    if (visualType === "bar") {
-      for (let i = 0; i < fftData.length; i++) {
-        const dbValue = Math.max(Math.min(fftData[i], 40), -140)
-        const normalizedHeight = (dbValue + 140) / 180
-        const barHeight = normalizedHeight * graphHeight
-        const x = marginLeft + i * (barWidth + 1)
+      // Y축 스케일 (데시벨)
+      const yScale = d3.scaleLinear()
+        .domain([-140, 0])
+        .range([graphHeight, 0])
 
-        const gradient = ctx.createLinearGradient(0, height - marginBottom, 0, height - marginBottom - barHeight)
-        gradient.addColorStop(0, "rgba(0, 191, 255, 0.8)")
-        gradient.addColorStop(1, "rgba(0, 255, 255, 0.4)")
+      // X축 그리드
+      const xGrid = d3.axisBottom(xScale)
+        .tickSize(-graphHeight)
+        .tickFormat(() => '')
+        .ticks(10)
 
-        ctx.fillStyle = gradient
-        ctx.fillRect(x, height - marginBottom - barHeight, barWidth, barHeight)
+      g.append("g")
+        .attr("class", "grid")
+        .attr("transform", `translate(0,${graphHeight})`)
+        .call(xGrid)
+        .attr("color", "rgba(255, 255, 255, 0.1)")
+        .style("stroke-dasharray", "3,3")
 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
-        ctx.fillRect(x, height - marginBottom - barHeight, barWidth, 2)
+      // Y축 그리드
+      const yGrid = d3.axisLeft(yScale)
+        .tickSize(-graphWidth)
+        .tickFormat(() => '')
+        .ticks(10)
+
+      g.append("g")
+        .attr("class", "grid")
+        .call(yGrid)
+        .attr("color", "rgba(255, 255, 255, 0.1)")
+        .style("stroke-dasharray", "3,3")
+
+      // X축
+      g.append("g")
+        .attr("transform", `translate(0,${graphHeight})`)
+        .call(d3.axisBottom(xScale)
+          .tickFormat(d => {
+            if (+d >= 1000) return `${+d / 1000}k`
+            return d.toString()
+          }))
+        .attr("color", "rgba(255, 255, 255, 0.7)")
+        .style("font-size", "12px")
+        .select(".domain")
+        .attr("stroke", "rgba(255, 255, 255, 0.7)")
+
+      // Y축
+      g.append("g")
+        .call(d3.axisLeft(yScale))
+        .attr("color", "rgba(255, 255, 255, 0.7)")
+        .style("font-size", "12px")
+        .select(".domain")
+        .attr("stroke", "rgba(255, 255, 255, 0.7)")
+
+      // 데이터 포인트 생성
+      const points = Array.from(fftData).map((value, i) => ({
+        frequency: 20 * Math.pow(20000 / 20, i / fftData.length),
+        decibel: Math.max(Math.min(value, 0), -140)
+      }))
+
+      if (index === 1) { // barGraphRef
+        // 막대 그래프
+        g.selectAll("rect.bar")
+          .data(points)
+          .enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("x", d => xScale(d.frequency))
+          .attr("y", d => yScale(d.decibel))
+          .attr("width", 2)
+          .attr("height", d => graphHeight - yScale(d.decibel))
+          .attr("fill", "rgb(0, 191, 255)")
+          .attr("opacity", 0.8)
+      } else { // lineGraphRef
+        // 라인 그래프
+        const line = d3.line<{ frequency: number, decibel: number }>()
+          .x(d => xScale(d.frequency))
+          .y(d => yScale(d.decibel))
+          .curve(d3.curveMonotoneX)
+
+        // 그라데이션 정의
+        const gradient = g.append("defs")
+          .append("linearGradient")
+          .attr("id", `line-gradient-${index}`)
+          .attr("gradientUnits", "userSpaceOnUse")
+          .attr("x1", 0)
+          .attr("y1", yScale(-140))
+          .attr("x2", 0)
+          .attr("y2", yScale(0))
+
+        gradient.append("stop")
+          .attr("offset", "0%")
+          .attr("stop-color", "rgba(0, 191, 255, 0.1)")
+
+        gradient.append("stop")
+          .attr("offset", "100%")
+          .attr("stop-color", "rgba(0, 191, 255, 0.8)")
+
+        // 영역 그래프
+        const area = d3.area<{ frequency: number, decibel: number }>()
+          .x(d => xScale(d.frequency))
+          .y0(graphHeight)
+          .y1(d => yScale(d.decibel))
+          .curve(d3.curveMonotoneX)
+
+        g.append("path")
+          .datum(points)
+          .attr("fill", `url(#line-gradient-${index})`)
+          .attr("d", area)
+
+        // 라인
+        g.append("path")
+          .datum(points)
+          .attr("fill", "none")
+          .attr("stroke", "rgb(0, 191, 255)")
+          .attr("stroke-width", 2)
+          .attr("d", line)
       }
-    } else {
-      ctx.beginPath()
-      ctx.moveTo(marginLeft, height - marginBottom)
-      let prevHeight = 0
 
-      for (let i = 0; i < fftData.length; i++) {
-        const dbValue = Math.max(Math.min(fftData[i], 40), -140)
-        const normalizedHeight = (dbValue + 140) / 180
-        const barHeight = normalizedHeight * graphHeight
-        const x = marginLeft + i * (barWidth + 1)
+      // 축 레이블
+      g.append("text")
+        .attr("transform", `translate(${-margin.left + 16},${graphHeight / 2}) rotate(-90)`)
+        .style("text-anchor", "middle")
+        .style("fill", "rgba(255, 255, 255, 0.7)")
+        .style("font-size", "14px")
+        .text("Amplitude (dB)")
 
-        if (i === 0) {
-          ctx.lineTo(x, height - marginBottom - barHeight)
-        } else {
-          ctx.bezierCurveTo(
-            x - (barWidth + 1) * 0.5, height - marginBottom - prevHeight,
-            x - (barWidth + 1) * 0.5, height - marginBottom - barHeight,
-            x, height - marginBottom - barHeight
-          )
-        }
-        prevHeight = barHeight
-      }
-
-      ctx.lineTo(width, height - marginBottom)
-
-      const gradient = ctx.createLinearGradient(0, 0, 0, graphHeight)
-      gradient.addColorStop(0, "rgba(0, 255, 255, 0.5)")
-      gradient.addColorStop(1, "rgba(0, 191, 255, 0.2)")
-
-      ctx.fillStyle = gradient
-      ctx.strokeStyle = "rgb(0, 191, 255)"
-      ctx.lineWidth = 2
-
-      ctx.fill()
-      ctx.stroke()
-    }
-  }
-
-  const drawGrid = (ctx: CanvasRenderingContext2D) => {
-    ctx.strokeStyle = "rgba(128, 128, 128, 0.2)"
-    ctx.lineWidth = 1
-
-    // 수평 그리드 라인과 dB 레이블
-    for (let db = -140; db <= 40; db += 10) {
-      const y = height * (1 - (db + 140) / 180)
-
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(width, y)
-      ctx.stroke()
-
-      // dB 레이블
-      ctx.fillStyle = "rgba(128, 128, 128, 0.8)"
-      ctx.font = "12px sans-serif"
-      ctx.textAlign = "right"
-      ctx.fillText(`${db}dB`, 30, y + 4)
-    }
-
-    // 주파수 레이블 (기존과 동일)
-    const freqLabels = ["31.5", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"]
-    const step = width / (freqLabels.length - 1)
-
-    ctx.textAlign = "center"
-    freqLabels.forEach((label, i) => {
-      const x = i * step
-      ctx.fillText(label, x, height - 5)
+      g.append("text")
+        .attr("transform", `translate(${graphWidth / 2},${graphHeight + margin.bottom - 10})`)
+        .style("text-anchor", "middle")
+        .style("fill", "rgba(255, 255, 255, 0.7)")
+        .style("font-size", "14px")
+        .text("Frequency (Hz)")
     })
   }
 
@@ -276,8 +345,8 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
     return Math.round(-140 + yNormalized * 180)
   }
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current?.getBoundingClientRect()
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
 
     const x = e.clientX - rect.left
@@ -297,13 +366,12 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
 
   useEffect(() => {
     // visualType이 변경될 때마다 캔버스 초기화
-    if (!canvasRef.current) return
-    const ctx = canvasRef.current.getContext("2d")
-    if (!ctx) return
+    if (!svgRef.current) return
+    const svg = d3.select(svgRef.current)
+    if (!svg) return
 
     // 캔버스 초기화
-    ctx.fillStyle = "rgb(0, 0, 0)"
-    ctx.fillRect(0, 0, width, height)
+    svg.selectAll("*").remove()
     // 현재 오디오 데이터로 다시 그리기
     if (scriptProcessorRef.current) {
       const inputData = new Float32Array(fftSize)
@@ -315,29 +383,66 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
     }
   }, [visualType]) // visualType이 변경될 때만 실행
 
+  // 창 크기 변경 감지
+  useEffect(() => {
+    const handleResize = () => {
+      if (svgRef.current) {
+        svgRef.current.setAttribute("width", window.innerWidth.toString())
+        svgRef.current.setAttribute("height", (window.innerHeight - 48).toString())
+      }
+    }
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col">
       <AudioSpectrumHeader
         visualType={visualType}
         onVisualTypeChange={onVisualTypeChange}
       />
-
-      {hoveredPoint && (
-        <div className="pointer-events-none absolute rounded-md bg-gray-900 px-3 py-1.5 text-sm text-white"
-          style={{ left: `${hoveredPoint.clientX + 10}px`, top: `${hoveredPoint.clientY + 10}px` }}>
-          {hoveredPoint.frequency.toFixed(1)}Hz
-          <br />
-          {hoveredPoint.decibel.toFixed(1)}dB
-        </div>
-      )}
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className="rounded-lg bg-black"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      />
+      <div className="relative flex-1">
+        <svg
+          ref={lineGraphRef}
+          width={width}
+          height={height}
+          className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "line" ? "opacity-100" : "opacity-0"
+            }`}
+        />
+        <svg
+          ref={barGraphRef}
+          width={width}
+          height={height}
+          className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "bar" ? "opacity-100" : "opacity-0"
+            }`}
+        />
+        {hoveredPoint && (
+          <div
+            className="absolute pointer-events-none px-4 py-2 bg-black/80 backdrop-blur-sm rounded-lg border border-white/20 text-white shadow-lg"
+            style={{
+              left: hoveredPoint.clientX + 12,
+              top: hoveredPoint.clientY - 12,
+              transform: 'translate(-55%, -20%)',
+            }}
+          >
+            <div className="flex flex-col gap-1 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-blue-400">Frequency:</span>
+                <span className="font-mono">
+                  {hoveredPoint.frequency < 1000
+                    ? `${hoveredPoint.frequency} Hz`
+                    : `${(hoveredPoint.frequency / 1000).toFixed(1)} kHz`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-400">Amplitude:</span>
+                <span className="font-mono">{hoveredPoint.decibel} dB</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 } 
