@@ -11,9 +11,11 @@ interface AudioSidebarProps {
   onLpfFrequencyChange: (freq: LPFFrequency) => void;
   fftSize: FFTSize;
   onFftSizeChange: (size: FFTSize) => void;
+  averageType: 'LPF' | 'FIFO';
+  onAverageTypeChange: (type: 'LPF' | 'FIFO') => void;
 }
 
-export default function AudioSidebar({ audioContext, source, onSourceChange, lpfFrequency, onLpfFrequencyChange, fftSize, onFftSizeChange }: AudioSidebarProps) {
+export default function AudioSidebar({ audioContext, source, onSourceChange, lpfFrequency, onLpfFrequencyChange, fftSize, onFftSizeChange, averageType, onAverageTypeChange }: AudioSidebarProps) {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('')
   const [volume, setVolume] = useState<number>(-Infinity)
@@ -92,7 +94,7 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
   }
 
   return (
-    <div className="w-72 bg-[#1C1C1E] flex flex-col h-screen">
+    <div className="w-72 bg-[#1C1C1E] flex flex-col h-screen border-l border-[#2C2C2E]">
       <div className="p-4 border-b border-gray-800">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -170,9 +172,13 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Average Type</span>
-            <select className="bg-[#2C2C2E] text-white px-3 py-1.5 rounded-md text-sm">
-              <option>LPF</option>
-              <option>FIFO</option>
+            <select
+              value={averageType}
+              onChange={(e) => onAverageTypeChange(e.target.value as 'LPF' | 'FIFO')}
+              className="bg-[#2C2C2E] text-white px-3 py-1.5 rounded-md text-sm"
+            >
+              <option value="LPF">LPF</option>
+              <option value="FIFO">FIFO</option>
             </select>
           </div>
         </div>

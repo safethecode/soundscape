@@ -12,6 +12,8 @@ export default function Main() {
   const [source, setSource] = useState<MediaStreamAudioSourceNode>()
   const [lpfFrequency, setLpfFrequency] = useState<LPFFrequency>(1)
   const [fftSize, setFftSize] = useState<FFTSize>(2048)
+  const [averageType, setAverageType] = useState<'LPF' | 'FIFO'>('LPF')
+  const [visualType, setVisualType] = useState<'line' | 'bar'>('line')
 
   const handleSourceChange = (stream: MediaStream) => {
     if (!audioContext) {
@@ -35,7 +37,11 @@ export default function Main() {
             source={source}
             onSourceChange={handleSourceChange}
             lpfFrequency={lpfFrequency}
+            onLpfFrequencyChange={setLpfFrequency}
             fftSize={fftSize}
+            averageType={averageType}
+            visualType={visualType}
+            onVisualTypeChange={setVisualType}
           />
         )}
       </div>
@@ -47,6 +53,8 @@ export default function Main() {
         onLpfFrequencyChange={setLpfFrequency}
         fftSize={fftSize}
         onFftSizeChange={setFftSize}
+        averageType={averageType}
+        onAverageTypeChange={setAverageType}
       />
     </main>
   )

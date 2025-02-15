@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import ComplexArray from '@/lib/complex_array'
 import { FFT } from '@/lib/fft'
 import { LowPassFilter, FIFOFilter } from '@/lib/filters'
+import AudioSpectrumHeader from './AudioSpectrumHeader'
 
-type AverageType = 'LPF' | 'FIFO'
 type LPFFrequency = 0.25 | 0.5 | 1
 
 interface AudioSpectrumProps {
@@ -14,11 +14,22 @@ interface AudioSpectrumProps {
   audioContext: AudioContext;
   source: MediaStreamAudioSourceNode;
   onSourceChange: (stream: MediaStream) => void;
-  lpfFrequency: number;
+  lpfFrequency: LPFFrequency;
   fftSize: number;
+  onLpfFrequencyChange: (freq: LPFFrequency) => void;
+  averageType: 'LPF' | 'FIFO';
+  visualType: 'line' | 'bar';
+  onVisualTypeChange: (type: 'line' | 'bar') => void;
 }
 
-export default function AudioSpectrum({ width = 800, height = 400, audioContext, source, onSourceChange, lpfFrequency, fftSize }: AudioSpectrumProps) {
+interface Point {
+  frequency: number;
+  decibel: number;
+  clientX: number;
+  clientY: number;
+}
+
+export default function AudioSpectrum({ width = 800, height = 400, audioContext, source, onSourceChange, lpfFrequency, fftSize, onLpfFrequencyChange, averageType, visualType, onVisualTypeChange }: AudioSpectrumProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const audioContextRef = useRef<AudioContext>()
   const sourceRef = useRef<MediaStreamAudioSourceNode>()
@@ -26,8 +37,8 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
   const lpfFiltersRef = useRef<LowPassFilter[]>([])
   const fifoFiltersRef = useRef<FIFOFilter[]>([])
 
-  const [averageType, setAverageType] = useState<AverageType>('LPF')
   const [fifoCount, setFifoCount] = useState<number>(4)
+  const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
 
   const calculateAlpha = (frequency: number) => {
     // T = 1/frequency (period)
@@ -124,7 +135,9 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
       }
     }
 
-    initAudio()
+    if (!audioContextRef.current) {
+      initAudio()
+    }
 
     return () => {
       if (scriptProcessorRef.current) {
@@ -137,7 +150,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
         audioContextRef.current.close()
       }
     }
-  }, [averageType, fftSize]) // averageType이 변경될 때마다 재초기화
+  }, [averageType, fftSize])
 
   useEffect(() => {
     fifoFiltersRef.current.forEach(filter => {
@@ -157,33 +170,66 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
     // Draw grid and labels
     drawGrid(ctx)
 
-    // Draw frequency bars with interpolation
     const barWidth = (width / fftData.length) * 2.5
-    ctx.beginPath()
-    ctx.moveTo(0, height)
 
-    for (let i = 0; i < fftData.length; i++) {
-      const dbValue = Math.max(Math.min(fftData[i], 40), -140) // 값 범위 제한
-      const normalizedHeight = (dbValue + 140) / 180 // -140 ~ 40 범위를 0 ~ 1로 정규화
-      const barHeight = normalizedHeight * height
-      const x = i * (barWidth + 1)
+    if (visualType === 'bar') {
+      // 바 그래프 그리기
+      for (let i = 0; i < fftData.length; i++) {
+        const dbValue = Math.max(Math.min(fftData[i], 40), -140)
+        const normalizedHeight = (dbValue + 140) / 180
+        const barHeight = normalizedHeight * height
+        const x = i * (barWidth + 1)
 
-      if (i === 0) {
-        ctx.lineTo(x, height - barHeight)
-      } else {
-        ctx.lineTo(x, height - barHeight)
+        // 그라데이션 생성
+        const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight)
+        gradient.addColorStop(0, 'rgba(0, 191, 255, 0.8)')
+        gradient.addColorStop(1, 'rgba(0, 255, 255, 0.4)')
+
+        ctx.fillStyle = gradient
+        ctx.fillRect(x, height - barHeight, barWidth, barHeight)
+
+        // 바의 상단에 하이라이트 효과
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+        ctx.fillRect(x, height - barHeight, barWidth, 2)
       }
+    } else {
+      // 라인 그래프 그리기
+      ctx.beginPath()
+      ctx.moveTo(0, height)
+      let prevHeight = height
+
+      for (let i = 0; i < fftData.length; i++) {
+        const dbValue = Math.max(Math.min(fftData[i], 40), -140)
+        const normalizedHeight = (dbValue + 140) / 180
+        const barHeight = normalizedHeight * height
+        const x = i * (barWidth + 1)
+
+        if (i === 0) {
+          ctx.lineTo(x, height - barHeight)
+        } else {
+          ctx.bezierCurveTo(
+            x - (barWidth + 1) * 0.5, height - prevHeight,
+            x - (barWidth + 1) * 0.5, height - barHeight,
+            x, height - barHeight
+          )
+        }
+        prevHeight = barHeight
+      }
+
+      ctx.lineTo(width, height)
+
+      // 그라데이션 생성
+      const gradient = ctx.createLinearGradient(0, 0, 0, height)
+      gradient.addColorStop(0, 'rgba(0, 255, 255, 0.5)')
+      gradient.addColorStop(1, 'rgba(0, 191, 255, 0.2)')
+
+      ctx.fillStyle = gradient
+      ctx.strokeStyle = 'rgb(0, 191, 255)'
+      ctx.lineWidth = 2
+
+      ctx.fill()
+      ctx.stroke()
     }
-
-    // 그래프 스타일 설정
-    ctx.lineTo(width, height)
-    ctx.fillStyle = 'rgba(0, 191, 255, 0.5)'
-    ctx.strokeStyle = 'rgb(0, 191, 255)'
-    ctx.lineWidth = 2
-
-    // 그래프 채우기와 선 그리기
-    ctx.fill()
-    ctx.stroke()
   }
 
   const drawGrid = (ctx: CanvasRenderingContext2D) => {
@@ -217,48 +263,79 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
     })
   }
 
+  const getFrequencyAtX = (x: number) => {
+    const freqMin = 20;
+    const freqMax = 20000;
+    const xNormalized = x / width;
+    return Math.round(freqMin * Math.pow(freqMax / freqMin, xNormalized));
+  }
+
+  const getDecibelAtY = (y: number) => {
+    const yNormalized = 1 - (y / height);
+    return Math.round(-140 + yNormalized * 180);
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setHoveredPoint({
+      frequency: getFrequencyAtX(x),
+      decibel: getDecibelAtY(y),
+      clientX: e.clientX,  // 마우스 위치 저장
+      clientY: e.clientY
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredPoint(null);
+  };
+
+  useEffect(() => {
+    // visualType이 변경될 때마다 캔버스 초기화
+    if (!canvasRef.current) return
+    const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
+
+    // 캔버스 초기화
+    ctx.fillStyle = 'rgb(0, 0, 0)'
+    ctx.fillRect(0, 0, width, height)
+    // 현재 오디오 데이터로 다시 그리기
+    if (scriptProcessorRef.current) {
+      const inputData = new Float32Array(fftSize)
+      const fftData = calculateFFT(inputData)
+      const filteredData = averageType === 'LPF'
+        ? applyLPF(fftData)
+        : applyFIFO(fftData)
+      drawSpectrum(filteredData)
+    }
+  }, [visualType]) // visualType이 변경될 때만 실행
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-4 items-center">
-        <select
-          value={averageType}
-          onChange={(e) => setAverageType(e.target.value as AverageType)}
-          className="bg-gray-800 text-white p-2 rounded"
-        >
-          <option value="LPF">LPF</option>
-          <option value="FIFO">FIFO</option>
-        </select>
+      <AudioSpectrumHeader
+        visualType={visualType}
+        onVisualTypeChange={onVisualTypeChange}
+      />
 
-        {averageType === 'LPF' ? (
-          <select
-            value={lpfFrequency}
-            onChange={(e) => setLpfFrequency(Number(e.target.value) as LPFFrequency)}
-            className="bg-gray-800 text-white p-2 rounded"
-          >
-            <option value={0.25}>0.25Hz</option>
-            <option value={0.5}>0.5Hz</option>
-            <option value={1}>1Hz</option>
-          </select>
-        ) : (
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min="1"
-              max="32"
-              value={fifoCount}
-              onChange={(e) => setFifoCount(Number(e.target.value))}
-              className="w-32"
-            />
-            <span className="text-white min-w-12">{fifoCount}</span>
-          </div>
-        )}
-      </div>
-
+      {hoveredPoint && (
+        <div className="absolute bg-gray-900 text-white px-3 py-1.5 rounded-md text-sm pointer-events-none"
+          style={{ left: `${hoveredPoint.clientX + 10}px`, top: `${hoveredPoint.clientY + 10}px` }}>
+          {hoveredPoint.frequency.toFixed(1)}Hz
+          <br />
+          {hoveredPoint.decibel.toFixed(1)}dB
+        </div>
+      )}
       <canvas
         ref={canvasRef}
         width={width}
         height={height}
-        className="bg-black rounded"
+        className="bg-black rounded-lg"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
       />
     </div>
   )
