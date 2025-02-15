@@ -11,9 +11,14 @@ type LPFFrequency = 0.25 | 0.5 | 1
 interface AudioSpectrumProps {
   width?: number;
   height?: number;
+  audioContext: AudioContext;
+  source: MediaStreamAudioSourceNode;
+  onSourceChange: (stream: MediaStream) => void;
+  lpfFrequency: number;
+  fftSize: number;
 }
 
-export default function AudioSpectrum({ width = 800, height = 400 }: AudioSpectrumProps) {
+export default function AudioSpectrum({ width = 800, height = 400, audioContext, source, onSourceChange, lpfFrequency, fftSize }: AudioSpectrumProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const audioContextRef = useRef<AudioContext>()
   const sourceRef = useRef<MediaStreamAudioSourceNode>()
@@ -22,7 +27,6 @@ export default function AudioSpectrum({ width = 800, height = 400 }: AudioSpectr
   const fifoFiltersRef = useRef<FIFOFilter[]>([])
 
   const [averageType, setAverageType] = useState<AverageType>('LPF')
-  const [lpfFrequency, setLpfFrequency] = useState<LPFFrequency>(1)
   const [fifoCount, setFifoCount] = useState<number>(4)
 
   const calculateAlpha = (frequency: number) => {
@@ -33,11 +37,10 @@ export default function AudioSpectrum({ width = 800, height = 400 }: AudioSpectr
   }
 
   useEffect(() => {
-    // LPF 주파수가 변경될 때마다 필터 재설정
-    lpfFiltersRef.current = Array(1024) // FFT size의 절반
+    lpfFiltersRef.current = Array(fftSize / 2)
       .fill(null)
       .map(() => new LowPassFilter(lpfFrequency))
-  }, [lpfFrequency])
+  }, [lpfFrequency, fftSize])
 
   const applyLPF = (currentData: Float32Array) => {
     if (lpfFiltersRef.current.length !== currentData.length) {
@@ -106,7 +109,7 @@ export default function AudioSpectrum({ width = 800, height = 400 }: AudioSpectr
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         const audioContext = new AudioContext()
         const source = audioContext.createMediaStreamSource(stream)
-        const scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1)
+        const scriptProcessor = audioContext.createScriptProcessor(fftSize, 1, 1)
 
         scriptProcessor.onaudioprocess = processAudioData
         source.connect(scriptProcessor)
@@ -134,7 +137,7 @@ export default function AudioSpectrum({ width = 800, height = 400 }: AudioSpectr
         audioContextRef.current.close()
       }
     }
-  }, [averageType]) // averageType이 변경될 때마다 재초기화
+  }, [averageType, fftSize]) // averageType이 변경될 때마다 재초기화
 
   useEffect(() => {
     fifoFiltersRef.current.forEach(filter => {
