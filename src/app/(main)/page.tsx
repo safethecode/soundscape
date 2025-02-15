@@ -1,8 +1,8 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import AudioSpectrum from '@/components/AudioSpectrum'
-import AudioSidebar from '@/components/AudioSidebar'
+import { useState } from "react"
+import AudioSpectrum from "@/components/AudioSpectrum"
+import AudioSidebar from "@/components/AudioSidebar"
 
 type LPFFrequency = 0.25 | 0.5 | 1
 type FFTSize = 1024 | 2048 | 4096
@@ -12,8 +12,8 @@ export default function Main() {
   const [source, setSource] = useState<MediaStreamAudioSourceNode>()
   const [lpfFrequency, setLpfFrequency] = useState<LPFFrequency>(1)
   const [fftSize, setFftSize] = useState<FFTSize>(2048)
-  const [averageType, setAverageType] = useState<'LPF' | 'FIFO'>('LPF')
-  const [visualType, setVisualType] = useState<'line' | 'bar'>('line')
+  const [averageType, setAverageType] = useState<"LPF" | "FIFO">("LPF")
+  const [visualType, setVisualType] = useState<"line" | "bar">("line")
 
   const handleSourceChange = (stream: MediaStream) => {
     if (!audioContext) {

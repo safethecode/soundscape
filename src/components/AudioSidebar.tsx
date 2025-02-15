@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react"
 
 type LPFFrequency = 0.25 | 0.5 | 1;
 type FFTSize = 1024 | 2048 | 4096;
@@ -11,20 +11,20 @@ interface AudioSidebarProps {
   onLpfFrequencyChange: (freq: LPFFrequency) => void;
   fftSize: FFTSize;
   onFftSizeChange: (size: FFTSize) => void;
-  averageType: 'LPF' | 'FIFO';
-  onAverageTypeChange: (type: 'LPF' | 'FIFO') => void;
+  averageType: "LPF" | "FIFO";
+  onAverageTypeChange: (type: "LPF" | "FIFO") => void;
 }
 
 export default function AudioSidebar({ audioContext, source, onSourceChange, lpfFrequency, onLpfFrequencyChange, fftSize, onFftSizeChange, averageType, onAverageTypeChange }: AudioSidebarProps) {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('')
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>("")
   const [volume, setVolume] = useState<number>(-Infinity)
 
   useEffect(() => {
     const initializeAudio = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices()
-        const audioDevices = devices.filter(device => device.kind === 'audioinput')
+        const audioDevices = devices.filter(device => device.kind === "audioinput")
         setDevices(audioDevices)
 
         if (audioDevices.length > 0 && !selectedDeviceId) {
@@ -37,7 +37,7 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
           onSourceChange(stream)
         }
       } catch (err) {
-        console.error('Error initializing audio:', err)
+        console.error("Error initializing audio:", err)
       }
     }
 
@@ -89,31 +89,31 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
       })
       onSourceChange(stream)
     } catch (err) {
-      console.error('Error changing audio source:', err)
+      console.error("Error changing audio source:", err)
     }
   }
 
   return (
-    <div className="w-72 bg-[#1C1C1E] flex flex-col h-screen border-l border-[#2C2C2E]">
-      <div className="p-4 border-b border-gray-800">
-        <div className="flex items-center justify-between mb-4">
+    <div className="flex h-screen w-72 flex-col border-l border-[#2C2C2E] bg-[#1C1C1E]">
+      <div className="border-b border-gray-800 p-4">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
-              <span className="text-white font-semibold">A</span>
+            <div className="flex size-8 items-center justify-center rounded-full bg-purple-500">
+              <span className="font-semibold text-white">A</span>
             </div>
-            <h2 className="text-white font-medium">Audio Input</h2>
+            <h2 className="font-medium text-white">Audio Input</h2>
           </div>
-          <button className="px-4 py-1.5 bg-[#2C2C2E] text-white rounded-full text-sm">
+          <button className="rounded-full bg-[#2C2C2E] px-4 py-1.5 text-sm text-white">
             Share
           </button>
         </div>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-gray-400 text-sm">Input Device</label>
+            <label className="text-sm text-gray-400">Input Device</label>
             <select
               value={selectedDeviceId}
               onChange={(e) => handleDeviceChange(e.target.value)}
-              className="w-full bg-[#2C2C2E] text-white p-2.5 rounded-md text-sm border-none focus:ring-0"
+              className="w-full rounded-md border-none bg-[#2C2C2E] p-2.5 text-sm text-white focus:ring-0"
             >
               {devices.map(device => (
                 <option key={device.deviceId} value={device.deviceId}>
@@ -123,25 +123,25 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-gray-400 text-sm">Input Level</label>
+            <label className="text-sm text-gray-400">Input Level</label>
             <div className="flex gap-1">
               {Array.from({ length: 15 }, (_, index) => {
-                const isActive = volume >= (index * 100 / 14);
+                const isActive = volume >= (index * 100 / 14)
                 return (
                   <div
                     key={index}
-                    className={`flex-1 h-1.5 rounded-full transition-all duration-100 
-                      ${isActive ? 'bg-green-500' : 'bg-[#2C2C2E]'}`}
+                    className={`h-1.5 flex-1 rounded-full transition-all duration-100 
+                      ${isActive ? "bg-green-500" : "bg-[#2C2C2E]"}`}
                   />
-                );
+                )
               })}
             </div>
           </div>
         </div>
       </div>
-      <div className="flex-1 p-4 space-y-4">
+      <div className="flex-1 space-y-4 p-4">
         <div className="flex items-center justify-between">
-          <span className="text-white font-medium">Analysis</span>
+          <span className="font-medium text-white">Analysis</span>
         </div>
         <div className="space-y-4">
           <div className='flex items-center justify-between'>
@@ -150,7 +150,7 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
               <select
                 value={lpfFrequency}
                 onChange={(e) => onLpfFrequencyChange(Number(e.target.value) as LPFFrequency)}
-                className="bg-[#2C2C2E] text-white px-3 py-1.5 rounded-md text-sm"
+                className="rounded-md bg-[#2C2C2E] px-3 py-1.5 text-sm text-white"
               >
                 <option value={0.25}>0.25Hz</option>
                 <option value={0.5}>0.5Hz</option>
@@ -163,7 +163,7 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
             <select
               value={fftSize}
               onChange={(e) => onFftSizeChange(Number(e.target.value) as FFTSize)}
-              className="bg-[#2C2C2E] text-white px-3 py-1.5 rounded-md text-sm"
+              className="rounded-md bg-[#2C2C2E] px-3 py-1.5 text-sm text-white"
             >
               <option value={1024}>1024</option>
               <option value={2048}>2048</option>
@@ -174,8 +174,8 @@ export default function AudioSidebar({ audioContext, source, onSourceChange, lpf
             <span className="text-gray-400">Average Type</span>
             <select
               value={averageType}
-              onChange={(e) => onAverageTypeChange(e.target.value as 'LPF' | 'FIFO')}
-              className="bg-[#2C2C2E] text-white px-3 py-1.5 rounded-md text-sm"
+              onChange={(e) => onAverageTypeChange(e.target.value as "LPF" | "FIFO")}
+              className="rounded-md bg-[#2C2C2E] px-3 py-1.5 text-sm text-white"
             >
               <option value="LPF">LPF</option>
               <option value="FIFO">FIFO</option>

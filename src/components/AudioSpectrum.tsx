@@ -1,10 +1,10 @@
-'use client'
+"use client"
 
-import { useEffect, useRef, useState } from 'react'
-import ComplexArray from '@/lib/complex_array'
-import { FFT } from '@/lib/fft'
-import { LowPassFilter, FIFOFilter } from '@/lib/filters'
-import AudioSpectrumHeader from './AudioSpectrumHeader'
+import { useEffect, useRef, useState } from "react"
+import ComplexArray from "@/lib/complex_array"
+import { FFT } from "@/lib/fft"
+import { LowPassFilter, FIFOFilter } from "@/lib/filters"
+import AudioSpectrumHeader from "./AudioSpectrumHeader"
 
 type LPFFrequency = 0.25 | 0.5 | 1
 
@@ -17,9 +17,9 @@ interface AudioSpectrumProps {
   lpfFrequency: LPFFrequency;
   fftSize: number;
   onLpfFrequencyChange: (freq: LPFFrequency) => void;
-  averageType: 'LPF' | 'FIFO';
-  visualType: 'line' | 'bar';
-  onVisualTypeChange: (type: 'line' | 'bar') => void;
+  averageType: "LPF" | "FIFO";
+  visualType: "line" | "bar";
+  onVisualTypeChange: (type: "line" | "bar") => void;
 }
 
 interface Point {
@@ -38,7 +38,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
   const fifoFiltersRef = useRef<FIFOFilter[]>([])
 
   const [fifoCount, setFifoCount] = useState<number>(4)
-  const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<Point | null>(null)
 
   const calculateAlpha = (frequency: number) => {
     // T = 1/frequency (period)
@@ -108,7 +108,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
       const fftData = calculateFFT(inputData)
 
       // 필터 적용
-      const filteredData = averageType === 'LPF'
+      const filteredData = averageType === "LPF"
         ? applyLPF(fftData)
         : applyFIFO(fftData)
 
@@ -131,7 +131,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
         scriptProcessorRef.current = scriptProcessor
 
       } catch (err) {
-        console.error('Error accessing microphone:', err)
+        console.error("Error accessing microphone:", err)
       }
     }
 
@@ -160,11 +160,11 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
 
   const drawSpectrum = (fftData: Float32Array) => {
     if (!canvasRef.current) return
-    const ctx = canvasRef.current.getContext('2d')
+    const ctx = canvasRef.current.getContext("2d")
     if (!ctx) return
 
     // Clear canvas
-    ctx.fillStyle = 'rgb(0, 0, 0)'
+    ctx.fillStyle = "rgb(0, 0, 0)"
     ctx.fillRect(0, 0, width, height)
 
     // Draw grid and labels first
@@ -178,7 +178,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
 
     const barWidth = (graphWidth / fftData.length) * 2.5
 
-    if (visualType === 'bar') {
+    if (visualType === "bar") {
       for (let i = 0; i < fftData.length; i++) {
         const dbValue = Math.max(Math.min(fftData[i], 40), -140)
         const normalizedHeight = (dbValue + 140) / 180
@@ -186,13 +186,13 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
         const x = marginLeft + i * (barWidth + 1)
 
         const gradient = ctx.createLinearGradient(0, height - marginBottom, 0, height - marginBottom - barHeight)
-        gradient.addColorStop(0, 'rgba(0, 191, 255, 0.8)')
-        gradient.addColorStop(1, 'rgba(0, 255, 255, 0.4)')
+        gradient.addColorStop(0, "rgba(0, 191, 255, 0.8)")
+        gradient.addColorStop(1, "rgba(0, 255, 255, 0.4)")
 
         ctx.fillStyle = gradient
         ctx.fillRect(x, height - marginBottom - barHeight, barWidth, barHeight)
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
         ctx.fillRect(x, height - marginBottom - barHeight, barWidth, 2)
       }
     } else {
@@ -221,11 +221,11 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
       ctx.lineTo(width, height - marginBottom)
 
       const gradient = ctx.createLinearGradient(0, 0, 0, graphHeight)
-      gradient.addColorStop(0, 'rgba(0, 255, 255, 0.5)')
-      gradient.addColorStop(1, 'rgba(0, 191, 255, 0.2)')
+      gradient.addColorStop(0, "rgba(0, 255, 255, 0.5)")
+      gradient.addColorStop(1, "rgba(0, 191, 255, 0.2)")
 
       ctx.fillStyle = gradient
-      ctx.strokeStyle = 'rgb(0, 191, 255)'
+      ctx.strokeStyle = "rgb(0, 191, 255)"
       ctx.lineWidth = 2
 
       ctx.fill()
@@ -234,7 +234,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
   }
 
   const drawGrid = (ctx: CanvasRenderingContext2D) => {
-    ctx.strokeStyle = 'rgba(128, 128, 128, 0.2)'
+    ctx.strokeStyle = "rgba(128, 128, 128, 0.2)"
     ctx.lineWidth = 1
 
     // 수평 그리드 라인과 dB 레이블
@@ -247,17 +247,17 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
       ctx.stroke()
 
       // dB 레이블
-      ctx.fillStyle = 'rgba(128, 128, 128, 0.8)'
-      ctx.font = '12px sans-serif'
-      ctx.textAlign = 'right'
+      ctx.fillStyle = "rgba(128, 128, 128, 0.8)"
+      ctx.font = "12px sans-serif"
+      ctx.textAlign = "right"
       ctx.fillText(`${db}dB`, 30, y + 4)
     }
 
     // 주파수 레이블 (기존과 동일)
-    const freqLabels = ['31.5', '63', '125', '250', '500', '1k', '2k', '4k', '8k', '16k']
+    const freqLabels = ["31.5", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"]
     const step = width / (freqLabels.length - 1)
 
-    ctx.textAlign = 'center'
+    ctx.textAlign = "center"
     freqLabels.forEach((label, i) => {
       const x = i * step
       ctx.fillText(label, x, height - 5)
@@ -265,50 +265,50 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
   }
 
   const getFrequencyAtX = (x: number) => {
-    const freqMin = 20;
-    const freqMax = 20000;
-    const xNormalized = x / width;
-    return Math.round(freqMin * Math.pow(freqMax / freqMin, xNormalized));
+    const freqMin = 20
+    const freqMax = 20000
+    const xNormalized = x / width
+    return Math.round(freqMin * Math.pow(freqMax / freqMin, xNormalized))
   }
 
   const getDecibelAtY = (y: number) => {
-    const yNormalized = 1 - (y / height);
-    return Math.round(-140 + yNormalized * 180);
+    const yNormalized = 1 - (y / height)
+    return Math.round(-140 + yNormalized * 180)
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return
 
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
 
     setHoveredPoint({
       frequency: getFrequencyAtX(x),
       decibel: getDecibelAtY(y),
       clientX: e.clientX,  // 마우스 위치 저장
       clientY: e.clientY
-    });
-  };
+    })
+  }
 
   const handleMouseLeave = () => {
-    setHoveredPoint(null);
-  };
+    setHoveredPoint(null)
+  }
 
   useEffect(() => {
     // visualType이 변경될 때마다 캔버스 초기화
     if (!canvasRef.current) return
-    const ctx = canvasRef.current.getContext('2d')
+    const ctx = canvasRef.current.getContext("2d")
     if (!ctx) return
 
     // 캔버스 초기화
-    ctx.fillStyle = 'rgb(0, 0, 0)'
+    ctx.fillStyle = "rgb(0, 0, 0)"
     ctx.fillRect(0, 0, width, height)
     // 현재 오디오 데이터로 다시 그리기
     if (scriptProcessorRef.current) {
       const inputData = new Float32Array(fftSize)
       const fftData = calculateFFT(inputData)
-      const filteredData = averageType === 'LPF'
+      const filteredData = averageType === "LPF"
         ? applyLPF(fftData)
         : applyFIFO(fftData)
       drawSpectrum(filteredData)
@@ -323,7 +323,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
       />
 
       {hoveredPoint && (
-        <div className="absolute bg-gray-900 text-white px-3 py-1.5 rounded-md text-sm pointer-events-none"
+        <div className="pointer-events-none absolute rounded-md bg-gray-900 px-3 py-1.5 text-sm text-white"
           style={{ left: `${hoveredPoint.clientX + 10}px`, top: `${hoveredPoint.clientY + 10}px` }}>
           {hoveredPoint.frequency.toFixed(1)}Hz
           <br />
@@ -334,7 +334,7 @@ export default function AudioSpectrum({ width = 800, height = 400, audioContext,
         ref={canvasRef}
         width={width}
         height={height}
-        className="bg-black rounded-lg"
+        className="rounded-lg bg-black"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       />

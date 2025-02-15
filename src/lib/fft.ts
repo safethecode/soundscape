@@ -1,4 +1,4 @@
-import ComplexArray from './complex_array'
+import ComplexArray from "./complex_array"
 
 const PI = Math.PI
 const SQRT1_2 = Math.SQRT1_2
