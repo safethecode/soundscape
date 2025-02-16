@@ -425,7 +425,7 @@ export default function AudioSpectrum({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "line" ? "opacity-100" : "opacity-0"
-            }`}
+          }`}
         />
         <svg
           ref={barGraphRef}
@@ -434,7 +434,7 @@ export default function AudioSpectrum({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "bar" ? "opacity-100" : "opacity-0"
-            }`}
+          }`}
         />
         {hoveredPoint && (
           <div
