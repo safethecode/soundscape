@@ -3,8 +3,8 @@ export class LowPassFilter {
   private alpha: number
 
   constructor(cutoffFrequency: number) {
-    // 더 느린 응답을 위해 alpha 값 조정
-    this.alpha = cutoffFrequency * 0.02 // 0.25Hz -> 0.005, 0.5Hz -> 0.01, 1Hz -> 0.02
+    // alpha 값 조정
+    this.alpha = cutoffFrequency * 0.01 // 0.25Hz -> 0.0025, 0.5Hz -> 0.005, 1Hz -> 0.01
   }
 
   process(value: number): number {
@@ -29,9 +29,9 @@ export class FIFOFilter {
   private head: number = 0
   private isFull: boolean = false
   private lastOutput: number | null = null
-  private readonly smoothingFactor: number = 0.07 // 0.3 → 0.07로 감소
+  private readonly smoothingFactor: number = 0.07
 
-  constructor(size: number = 6) { // 4 → 6으로 증가
+  constructor(size: number = 6) {
     this.size = size
     this.buffer = new Array(size).fill(0)
   }

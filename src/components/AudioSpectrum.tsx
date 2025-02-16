@@ -86,6 +86,18 @@ export default function AudioSpectrum({
     return filtered
   }
 
+  useEffect(() => {
+    fifoFiltersRef.current = Array(fftSize / 2)
+      .fill(null)
+      .map(() => new FIFOFilter(fifoCount))
+  }, [fifoCount, fftSize])
+
+  useEffect(() => {
+    fifoFiltersRef.current.forEach(filter => {
+      if (filter) filter.resize(fifoCount)
+    })
+  }, [fifoCount])
+
   const applyFIFO = (currentData: Float32Array) => {
     if (fifoFiltersRef.current.length !== currentData.length) {
       fifoFiltersRef.current = Array(currentData.length)
@@ -170,12 +182,6 @@ export default function AudioSpectrum({
       }
     }
   }, [averageType, fftSize])
-
-  useEffect(() => {
-    fifoFiltersRef.current.forEach(filter => {
-      if (filter) filter.resize(fifoCount)
-    })
-  }, [fifoCount])
 
   const drawSpectrum = (fftData: Float32Array) => {
     // 두 그래프 모두 그리기
@@ -419,7 +425,7 @@ export default function AudioSpectrum({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "line" ? "opacity-100" : "opacity-0"
-          }`}
+            }`}
         />
         <svg
           ref={barGraphRef}
@@ -428,7 +434,7 @@ export default function AudioSpectrum({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "bar" ? "opacity-100" : "opacity-0"
-          }`}
+            }`}
         />
         {hoveredPoint && (
           <div
