@@ -234,7 +234,7 @@ export default function AudioSpectrum({
       g.append("g")
         .attr("transform", `translate(0,${graphHeight})`)
         .call(d3.axisBottom(xScale)
-          .ticks(10, (d) => {
+          .ticks(10, (d: number) => {
             // 10Hz 간격으로 눈금 표시
             const freq = +d
             return freq % 10 === 0
