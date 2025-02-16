@@ -4,7 +4,7 @@ export class LowPassFilter {
 
   constructor(cutoffFrequency: number) {
     // alpha 값 조정
-    this.alpha = cutoffFrequency * 0.01 // 0.25Hz -> 0.0025, 0.5Hz -> 0.005, 1Hz -> 0.01
+    this.alpha = cutoffFrequency * 0.02 // 0.25Hz -> 0.0025, 0.5Hz -> 0.005, 1Hz -> 0.01
   }
 
   process(value: number): number {
