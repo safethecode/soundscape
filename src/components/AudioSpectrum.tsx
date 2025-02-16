@@ -208,7 +208,7 @@ export default function AudioSpectrum({
       // X축 그리드
       const xGrid = d3.axisBottom(xScale)
         .tickSize(-graphHeight)
-        .tickFormat(() => '')
+        .tickFormat(() => "")
         .ticks(10)
 
       g.append("g")
@@ -221,7 +221,7 @@ export default function AudioSpectrum({
       // Y축 그리드
       const yGrid = d3.axisLeft(yScale)
         .tickSize(-graphWidth)
-        .tickFormat(() => '')
+        .tickFormat(() => "")
         .ticks(10)
 
       g.append("g")
@@ -419,7 +419,7 @@ export default function AudioSpectrum({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "line" ? "opacity-100" : "opacity-0"
-            }`}
+          }`}
         />
         <svg
           ref={barGraphRef}
@@ -428,15 +428,15 @@ export default function AudioSpectrum({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "bar" ? "opacity-100" : "opacity-0"
-            }`}
+          }`}
         />
         {hoveredPoint && (
           <div
-            className="absolute pointer-events-none px-4 py-2 bg-black/80 backdrop-blur-sm rounded-lg border border-white/20 text-white shadow-lg"
+            className="pointer-events-none absolute rounded-lg border border-white/20 bg-black/80 px-4 py-2 text-white shadow-lg backdrop-blur-sm"
             style={{
               left: hoveredPoint.clientX + 12,
               top: hoveredPoint.clientY - 12,
-              transform: 'translate(-55%, -20%)',
+              transform: "translate(-55%, -20%)",
             }}
           >
             <div className="flex flex-col gap-1 text-sm">
