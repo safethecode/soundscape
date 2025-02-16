@@ -234,8 +234,13 @@ export default function AudioSpectrum({
       g.append("g")
         .attr("transform", `translate(0,${graphHeight})`)
         .call(d3.axisBottom(xScale)
+          .ticks(10, (d) => {
+            // 10Hz 간격으로 눈금 표시
+            const freq = +d
+            return freq % 10 === 0
+          })
           .tickFormat(d => {
-            if (+d >= 1000) return `${+d / 1000}k`
+            if (+d >= 1000) return `${(+d / 1000).toFixed(1)}k`
             return d.toString()
           }))
         .attr("color", "rgba(255, 255, 255, 0.7)")
@@ -336,26 +341,30 @@ export default function AudioSpectrum({
   const getFrequencyAtX = (x: number) => {
     const freqMin = 20
     const freqMax = 20000
-    const xNormalized = x / width
+    const xNormalized = (x - margin.left) / graphWidth
     return Math.round(freqMin * Math.pow(freqMax / freqMin, xNormalized))
   }
 
   const getDecibelAtY = (y: number) => {
-    const yNormalized = 1 - (y / height)
-    return Math.round(-140 + yNormalized * 180)
+    const yNormalized = 1 - ((y - margin.top) / graphHeight)
+    return Math.round(-140 + yNormalized * 140)
   }
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    const rect = svgRef.current?.getBoundingClientRect()
-    if (!rect) return
-
+    const rect = e.currentTarget.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
+
+    if (x < margin.left || x > width - margin.right ||
+      y < margin.top || y > height - margin.bottom) {
+      setHoveredPoint(null)
+      return
+    }
 
     setHoveredPoint({
       frequency: getFrequencyAtX(x),
       decibel: getDecibelAtY(y),
-      clientX: e.clientX,  // 마우스 위치 저장
+      clientX: e.clientX,
       clientY: e.clientY
     })
   }
@@ -407,6 +416,8 @@ export default function AudioSpectrum({
           ref={lineGraphRef}
           width={width}
           height={height}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "line" ? "opacity-100" : "opacity-0"
             }`}
         />
@@ -414,6 +425,8 @@ export default function AudioSpectrum({
           ref={barGraphRef}
           width={width}
           height={height}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
           className={`absolute bg-gradient-to-b from-gray-900 to-black transition-opacity duration-300 ${visualType === "bar" ? "opacity-100" : "opacity-0"
             }`}
         />
